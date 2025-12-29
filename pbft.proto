@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package pbft;
+
+service PBFTService {
+  // PBFT flow
+  rpc SubmitRequest(ClientRequest) returns (ClientReply);
+  rpc PrePrepare(PrePrepareRequest) returns (Ack);
+  rpc Prepare(PrepareRequest) returns (Ack);
+  rpc Commit(CommitRequest) returns (Ack);
+
+  // Simplified view-change (failover): replicas can bump view when primary is unreachable
+  rpc SetView(SetViewRequest) returns (Ack);
+
+  // UI calls
+  rpc KillNode(Empty) returns (Empty);
+  rpc Ping(PingRequest) returns (PingReply);
+  rpc GetStatus (StatusRequest) returns (StatusReply);
+}
+
+message Empty {}
+
+message Ack {
+  bool ok = 1;
+  string error = 2;
+}
+
+message ClientRequest {
+  string client_id = 1;
+  string request_id = 2;
+  int64 timestamp_ms = 3;
+  string payload = 4;
+  bool forwarded = 5;
+}
+
+message ClientReply {
+  string client_id = 1;
+  string request_id = 2;
+  int32 replica_id = 3;
+  int32 view = 4;
+  int64 seq = 5;
+  bool committed = 6;
+  string result = 7;
+  string error = 8;
+}
+
+message PrePrepareRequest {
+  int32 view = 1;
+  int64 seq = 2;
+  string digest = 3;
+  int32 primary_id = 4;
+  ClientRequest request = 5;
+}
+
+message PrepareRequest {
+  int32 view = 1;
+  int64 seq = 2;
+  string digest = 3;
+  int32 replica_id = 4;
+}
+
+message CommitRequest {
+  int32 view = 1;
+  int64 seq = 2;
+  string digest = 3;
+  int32 replica_id = 4;
+}
+
+message SetViewRequest {
+  int32 view = 1;
+  int32 sender_id = 2;
+  string reason = 3;
+}
+
+message StatusRequest {}
+
+message StatusReply {
+  int32 node_id = 1;
+  string role = 2;
+  int32 view = 3;
+  bool alive = 4;
+  int32 primary_id = 5;
+  int32 f = 6;
+}
+
+message PingRequest {}
+
+message PingReply {
+  string message = 1;
+}
